@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odia Phonetic Typing Tool</title>
+    <style>
+        :root {
+            --primary: #005A9C;
+            --bg: #f4f7f6;
+            --box-bg: #ffffff;
+            --text: #333333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        p.subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .box {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+        .box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        label {
+            font-weight: bold;
+            font-size: 16px;
+            color: var(--primary);
+        }
+        .copy-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .copy-btn:hover {
+            background-color: #004475;
+        }
+        .copy-btn.copied {
+            background-color: #28a745; /* Green color for success */
+        }
+        textarea {
+            width: 100%;
+            height: 350px;
+            font-size: 22px;
+            padding: 15px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            resize: vertical;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+        textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        #outputText {
+            background-color: #eef5fb;
+        }
+        .footer-note {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 13px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Odia Phonetic Typing</h2>
+    <p class="subtitle">Start typing in English, it will instantly convert to Odia script based on your guide.</p>
+
+    <div class="container">
+        <!-- Input area -->
+        <div class="box">
+            <div class="box-header">
+                <label for="inputText">Type here (Phonetic English):</label>
+            </div>
+            <textarea id="inputText" placeholder="Type here... e.g., odiA akShara mALA" autofocus></textarea>
+        </div>
+        
+        <!-- Output area -->
+        <div class="box">
+            <div class="box-header">
+                <label for="outputText">Odia Script Output:</label>
+                <button id="copyBtn" class="copy-btn">Copy Text</button>
+            </div>
+            <textarea id="outputText" readonly placeholder="ଓଡ଼ିଆ ଅକ୍ଷର ମାଳା..."></textarea>
+        </div>
+    </div>
+    
+    <div class="footer-note">
+        Follows strictly the provided conjuncts, modifiers, and classic font features (e.g. lA &rarr; ଳ୍ଳ).
+    </div>
+
+    <script>
+        // 1. Literal Exceptions (CLASSIC FONT)
+        const exactMatches = {
+            "lA": "ଳ୍ଳ",
+            "cA": "ଚ୍ଚ"
+        };
+
+        // 2. Base Consonants and Overrides for Custom Conjuncts
+        const consonants = {
+            "NGkSh": "ଙ୍ଗ୍\u200Cକ୍ଷ୍",
+            "kShy": "କ୍ଷ୍ଯ୍",     
+            "tmy": "ତ୍ମ୍ଯ୍",      
+            "tsy": "ତ୍ସ୍ଯ୍",      
+            "nkh": "ଙ୍ଖ୍",
+            "ngh": "ଙ୍ଘ୍",
+            "nch": "ଞ୍ଛ୍",
+            "njh": "ଞ୍ଝ୍",
+            "nTh": "ଣ୍ଠ୍",
+            "nDh": "ଣ୍ଢ୍",
+            "kSh": "କ୍ଷ୍",
+            "NDr": "ନ୍ଦ୍ର୍",
+            "ntb": "ନ୍ତ୍ୱ୍",      
+            "nny": "ନ୍ୟ୍",
+            "rcc": "ର୍\u200Cକ୍",  
+            "rchh": "ର୍\u200Cଛ୍", 
+            "rtt": "ର୍ତ୍",
+            "str": "ଷ୍ଟ୍ର୍",
+            "rJy": "ର୍ଯ୍",
+            
+            "nk": "ଙ୍କ୍",
+            "ng": "ଙ୍ଗ୍",
+            "nc": "ଞ୍ଚ୍",
+            "nj": "ଞ୍ଜ୍",
+            "jN": "ଜ୍ଞ୍",
+            "nT": "ଣ୍ଟ୍",
+            "nD": "ଣ୍ଡ୍",
+            "Lk": "ଲ୍କ୍",
+            "lk": "ଲ୍ଲ୍",
+            "kb": "କ୍ୱ୍",      
+            "kT": "କ୍ତ୍",      
+            "ks": "କ୍ଷ୍",      
+            "dJ": "ଜ୍ଜ୍",
+            "kL": "କ୍ଲ୍",
+            "kl": "କ୍ଳ୍",
+            
+            "kh": "ଖ୍", "gh": "ଘ୍", "NG": "ଙ୍", "ch": "ଛ୍", "jh": "ଝ୍", "NJ": "ଞ୍",
+            "Th": "ଠ୍", "Dh": "ଢ୍", "th": "ଥ୍", "dh": "ଧ୍", "ph": "ଫ୍", "bh": "ଭ୍",
+            "sh": "ଶ୍", "Sh": "ଷ୍", "D'": "ଡ଼୍", "Dh'": "ଢ଼୍",
+            
+            "k": "କ୍", "g": "ଗ୍", "c": "ଚ୍", "j": "ଜ୍", "T": "ଟ୍", "D": "ଡ୍",
+            "N": "ଣ୍", "t": "ତ୍", "d": "ଦ୍", "n": "ନ୍", "p": "ପ୍", "b": "ବ୍",
+            "m": "ମ୍", "J": "ଯ୍", "r": "ର୍", "L": "ଳ୍", "s": "ସ୍", "h": "ହ୍",
+            "v": "ୱ୍", "w": "ୱ୍", "y": "ୟ୍", "l": "ଲ୍"
+        };
+
+        // 3. Independent Vowels
+        const independentVowels = {
+            "A": "ଆ", "i": "ଇ", "I": "ଈ", "u": "ଉ", "U": "ଌ",
+            "R": "ଊ", "&": "ଋ", "$": "ୠ", "e": "ଏ", "E": "ଐ",
+            "o": "ଓ", "O": "ଔ", "a": "ଅ"
+        };
+
+        // 4. Dependent Vowels (Matras)
+        const dependentVowels = {
+            "A": "ା", "i": "ି", "I": "ୀ", "u": "ୁ", "U": "ୂ",
+            "R": "ୃ", "&": "ୃ", "$": "ୄ", "e": "େ", "E": "ୈ",
+            "o": "ୋ", "O": "ୌ", "a": "" 
+        };
+
+        // 5. Modifiers and Punctuation
+        const modifiers = {
+            "MM": "ଁ", 
+            "M": "ଂ", 
+            "H": "ଃ", 
+            "'": "୍", 
+            "|": "।"  
+        };
+
+        // Helpers
+        const sortByLength = (obj) => Object.keys(obj).sort((a, b) => b.length - a.length);
+
+        const exactKeys = sortByLength(exactMatches);
+        const consKeys = sortByLength(consonants);
+        const indVowelKeys = sortByLength(independentVowels);
+        const depVowelKeys = sortByLength(dependentVowels);
+        const modKeys = sortByLength(modifiers);
+
+        function transliterate(text) {
+            let output = "";
+            let i = 0;
+            let last_was_consonant = false;
+
+            while (i < text.length) {
+                let matched = false;
+
+                // 1. Check Exact Matches
+                for (let key of exactKeys) {
+                    if (text.substr(i, key.length) === key) {
+                        output += exactMatches[key];
+                        i += key.length;
+                        last_was_consonant = false;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (matched) continue;
+
+                // 2. Check Modifiers
+                for (let key of modKeys) {
+                    if (text.substr(i, key.length) === key) {
+                        output += modifiers[key];
+                        i += key.length;
+                        last_was_consonant = false;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (matched) continue;
+
+                // 3. Check Vowels
+                let vowelMatched = false;
+                if (last_was_consonant) {
+                    for (let key of depVowelKeys) {
+                        if (text.substr(i, key.length) === key) {
+                            if (output.endsWith('\u0B4D')) {
+                                output = output.slice(0, -1);
+                            }
+                            output += dependentVowels[key];
+                            i += key.length;
+                            last_was_consonant = false;
+                            vowelMatched = true;
+                            break;
+                        }
+                    }
+                } else {
+                    for (let key of indVowelKeys) {
+                        if (text.substr(i, key.length) === key) {
+                            output += independentVowels[key];
+                            i += key.length;
+                            last_was_consonant = false;
+                            vowelMatched = true;
+                            break;
+                        }
+                    }
+                }
+                if (vowelMatched) continue;
+
+                // 4. Check Consonants
+                for (let key of consKeys) {
+                    if (text.substr(i, key.length) === key) {
+                        output += consonants[key];
+                        i += key.length;
+                        last_was_consonant = true;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (matched) continue;
+
+                // 5. Fallback
+                output += text[i];
+                i++;
+                last_was_consonant = false;
+            }
+
+            return output;
+        }
+
+        // Live updating listener
+        const inputEl = document.getElementById('inputText');
+        const outputEl = document.getElementById('outputText');
+        const copyBtn = document.getElementById('copyBtn');
+
+        inputEl.addEventListener('input', function() {
+            outputEl.value = transliterate(this.value);
+        });
+
+        // Copy Button functionality
+        copyBtn.addEventListener('click', function() {
+            if (!outputEl.value) return; // Don't copy if empty
+            
+            // Modern Clipboard API
+            navigator.clipboard.writeText(outputEl.value).then(() => {
+                // Change button style and text temporarily
+                const originalText = copyBtn.innerText;
+                copyBtn.innerText = "Copied!";
+                copyBtn.classList.add("copied");
+                
+                setTimeout(() => {
+                    copyBtn.innerText = originalText;
+                    copyBtn.classList.remove("copied");
+                }, 2000);
+            }).catch(err => {
+                // Fallback for older browsers
+                outputEl.select();
+                document.execCommand('copy');
+                alert("Text copied to clipboard!");
+            });
+        });
+    </script>
+</body>
+</html>
